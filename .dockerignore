@@ -1,0 +1,9 @@
+**/target/
+**/.idea/
+**/.git/
+**/*.iml
+**/.settings/
+**/.project
+**/.classpath
+*.md
+.dockerignore

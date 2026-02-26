@@ -1,0 +1,4 @@
+# Configuración compartida para todos los servicios
+spring:
+  application:
+    name: default
