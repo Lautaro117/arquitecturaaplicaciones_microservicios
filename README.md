@@ -332,25 +332,28 @@ Ya instalado en `C:\Program Files\logstash-8.17.0\`. Usar el pipeline del proyec
    - **Kibana:** `C:\kibana\bin\kibana.bat`
 
 4. **Servicios Spring Boot** (en terminales separadas):
-   ```bash
-   # Terminal 1 - Config Server
-   cd config-server && mvn spring-boot:run
 
-   # Terminal 2 - Eureka
+   > **Importante:** el Config Server debe levantarse con el perfil `native`. Sin él, Spring intenta usar el perfil `git` por defecto y falla con _"Invalid config server configuration"_ porque no hay un repositorio Git configurado. El perfil `native` le indica que lea los archivos de configuración desde la carpeta local `config/`.
+
+   ```bash
+   # Terminal 1 - Config Server (puerto 8888)
+   cd config-server && mvn spring-boot:run -Dspring-boot.run.profiles=native
+
+   # Terminal 2 - Eureka Server (puerto 8761)
    cd eureka-server && mvn spring-boot:run
 
-   # Terminal 3 - Auth Service
+   # Terminal 3 - Auth Service (puerto 8083)
    cd auth-service && mvn spring-boot:run
 
-   # Terminal 4 - API Gateway
-   cd api-gateway && mvn spring-boot:run
-
-   # Terminal 5 - Inventory Service (elegir profile)
+   # Terminal 4 - Inventory Service (elegir profile)
    cd inventory-service && mvn spring-boot:run -Dspring-boot.run.profiles=rabbitmq
    # o para Kafka:
    # cd inventory-service && mvn spring-boot:run -Dspring-boot.run.profiles=kafka
 
-   # Terminal 6 - Notification Service (mismo profile)
+   # Terminal 5 - API Gateway (puerto 8080) — levantar después de que los servicios estén en Eureka
+   cd api-gateway && mvn spring-boot:run
+
+   # Terminal 6 - Notification Service (mismo profile que inventory)
    cd notification-service && mvn spring-boot:run -Dspring-boot.run.profiles=rabbitmq
    # o para Kafka:
    # cd notification-service && mvn spring-boot:run -Dspring-boot.run.profiles=kafka
