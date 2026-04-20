@@ -1,4 +1,4 @@
-package com.uade.exam.proveedor;
+package com.uade.exam.ordentrabajo;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -15,6 +15,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Extensión JUnit 5 que registra el resultado de cada test y al finalizar
+ * escribe un reporte JSON en target/exam-report/resultado-examen.json
+ * con el legajo del alumno, el serial number de la PC y el detalle de cada test.
+ */
 public class ExamReportExtension implements TestWatcher, AfterAllCallback {
 
     private final List<TestResult> results = new ArrayList<>();
@@ -42,12 +47,12 @@ public class ExamReportExtension implements TestWatcher, AfterAllCallback {
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
         String studentId = System.getenv().getOrDefault("EXAM_STUDENT_ID", "NO-ASIGNADO");
-        String hostname = resolveHostname();
-        String serial = resolveSerialNumber();
+        String hostname  = resolveHostname();
+        String serial    = resolveSerialNumber();
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
         long passed = results.stream().filter(r -> "PASSED".equals(r.status)).count();
-        long total = results.size();
+        long total  = results.size();
         boolean approved = passed == total && total > 0;
 
         StringBuilder json = new StringBuilder();
@@ -106,6 +111,7 @@ public class ExamReportExtension implements TestWatcher, AfterAllCallback {
             } else if (os.contains("mac")) {
                 return runCommand("system_profiler", "SPHardwareDataType");
             } else {
+                // Linux — puede requerir sudo; se intenta de todas formas
                 return runCommand("dmidecode", "-s", "system-serial-number");
             }
         } catch (IOException | InterruptedException e) {
@@ -115,13 +121,14 @@ public class ExamReportExtension implements TestWatcher, AfterAllCallback {
 
     private String runCommand(String... cmd) throws IOException, InterruptedException {
         Process process = new ProcessBuilder(cmd)
-            .redirectErrorStream(true)
-            .start();
+                .redirectErrorStream(true)
+                .start();
         String output = new String(process.getInputStream().readAllBytes()).trim();
         process.waitFor();
 
         String os = System.getProperty("os.name", "").toLowerCase();
         if (os.contains("win")) {
+            // wmic devuelve "SerialNumber=XXXXX"
             for (String line : output.split("[\\r\\n]+")) {
                 if (line.startsWith("SerialNumber=")) {
                     String value = line.substring("SerialNumber=".length()).trim();
@@ -144,11 +151,10 @@ public class ExamReportExtension implements TestWatcher, AfterAllCallback {
     private String escape(String s) {
         if (s == null) return "";
         return s.replace("\\", "\\\\")
-            .replace("\"", "\\\"")
-            .replace("\n", "\\n")
-            .replace("\r", "\\r");
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r");
     }
 
     private record TestResult(String name, String status, String errorMessage) {}
 }
-
