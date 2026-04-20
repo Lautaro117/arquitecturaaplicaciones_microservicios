@@ -11,9 +11,9 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>exam-ordentrabajo-integration-tests</artifactId>
-    <name>Exam Orden Trabajo Integration Tests</name>
-    <description>Tests oficiales del examen — ordentrabajo-service vía API Gateway con JWT</description>
+    <artifactId>exam-notacredito-integration-tests</artifactId>
+    <name>Exam NotaCredito Integration Tests</name>
+    <description>Tests oficiales del examen — notacredito-service vía API Gateway con JWT</description>
     <packaging>jar</packaging>
 
     <dependencies>

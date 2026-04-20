@@ -1,4 +1,4 @@
-package com.uade.exam.ordentrabajo;
+package com.uade.exam.notacredito;
 
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -26,8 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @ExtendWith(ExamReportExtension.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Examen ordentrabajo-service (vía gateway, JWT)")
-class OrdenTrabajoApiExamIT {
+@DisplayName("Examen notacredito-service (vía gateway, JWT)")
+class NotaCreditoApiExamIT {
 
     private static final String HEADER_STUDENT = "X-Exam-Student-Id";
     private static final String HEADER_MACHINE = "X-Exam-Machine-Id";
@@ -38,8 +38,8 @@ class OrdenTrabajoApiExamIT {
     private static String examMachineId;
 
     private static Long createdId;
-    private static String createdTitulo;
-    private static String createdEstado;
+    private static String createdNumero;
+    private static String createdMotivo;
 
     @BeforeAll
     static void beforeAll() throws Exception {
@@ -54,8 +54,8 @@ class OrdenTrabajoApiExamIT {
         assertNotNull(accessToken, "No se obtuvo token JWT. ¿auth-service y api-gateway en " + gatewayBaseUrl + "?");
 
         String suffix = UUID.randomUUID().toString().substring(0, 8);
-        createdTitulo = "Examen OT " + suffix;
-        createdEstado = "PEND-" + suffix.substring(0, Math.min(5, suffix.length()));
+        createdNumero = "NC-EXAM-" + suffix;
+        createdMotivo = "Motivo examen " + suffix + " — devolución";
     }
 
     private static String fetchAccessToken() {
@@ -82,15 +82,15 @@ class OrdenTrabajoApiExamIT {
 
     @Test
     @Order(1)
-    @DisplayName("POST /api/ordenes-trabajo → 201 e id generado")
-    void createOrdenTrabajo() {
+    @DisplayName("POST /api/notas-credito → 201 e id generado")
+    void createNotaCredito() {
         String body = authSpec()
                 .contentType(ContentType.JSON)
                 .body(Map.of(
-                        "titulo", createdTitulo,
-                        "estado", createdEstado))
+                        "numero", createdNumero,
+                        "motivo", createdMotivo))
                 .when()
-                .post("/api/ordenes-trabajo")
+                .post("/api/notas-credito")
                 .then()
                 .statusCode(201)
                 .extract()
@@ -100,19 +100,19 @@ class OrdenTrabajoApiExamIT {
         createdId = JsonPath.from(body).getLong("id");
         assertNotNull(createdId);
         assertTrue(createdId > 0);
-        assertEquals(createdTitulo, JsonPath.from(body).getString("titulo"));
-        assertEquals(createdEstado, JsonPath.from(body).getString("estado"));
+        assertEquals(createdNumero, JsonPath.from(body).getString("numero"));
+        assertEquals(createdMotivo, JsonPath.from(body).getString("motivo"));
     }
 
     @Test
     @Order(2)
-    @DisplayName("GET /api/ordenes-trabajo/{id} → 200")
-    void getOrdenTrabajoById() {
+    @DisplayName("GET /api/notas-credito/{id} → 200")
+    void getNotaCreditoById() {
         assertNotNull(createdId);
 
         String body = authSpec()
                 .when()
-                .get("/api/ordenes-trabajo/" + createdId)
+                .get("/api/notas-credito/" + createdId)
                 .then()
                 .statusCode(200)
                 .extract()
@@ -120,18 +120,18 @@ class OrdenTrabajoApiExamIT {
                 .asString();
 
         assertEquals(createdId, JsonPath.from(body).getLong("id"));
-        assertEquals(createdTitulo, JsonPath.from(body).getString("titulo"));
+        assertEquals(createdNumero, JsonPath.from(body).getString("numero"));
     }
 
     @Test
     @Order(3)
-    @DisplayName("GET /api/ordenes-trabajo → 200 y contiene el creado")
-    void listOrdenesTrabajoContainsCreated() {
+    @DisplayName("GET /api/notas-credito → 200 y contiene la creada")
+    void listNotasCreditoContainsCreated() {
         assertNotNull(createdId);
 
         String body = authSpec()
                 .when()
-                .get("/api/ordenes-trabajo")
+                .get("/api/notas-credito")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -139,7 +139,7 @@ class OrdenTrabajoApiExamIT {
                 .asString();
 
         int n = JsonPath.from(body).getList("$").size();
-        assertTrue(n >= 1, "La lista debe incluir al menos una orden de trabajo");
+        assertTrue(n >= 1, "La lista debe incluir al menos una nota de crédito");
 
         boolean found = JsonPath.from(body).getList("$").stream().anyMatch(o -> {
             if (!(o instanceof Map)) {
@@ -148,25 +148,25 @@ class OrdenTrabajoApiExamIT {
             Object id = ((Map<?, ?>) o).get("id");
             return id != null && id.toString().equals(createdId.toString());
         });
-        assertTrue(found, "La orden creada debe aparecer en el listado");
+        assertTrue(found, "La nota de crédito creada debe aparecer en el listado");
     }
 
     @Test
     @Order(4)
-    @DisplayName("PUT /api/ordenes-trabajo/{id} → 200")
-    void updateOrdenTrabajo() {
+    @DisplayName("PUT /api/notas-credito/{id} → 200")
+    void updateNotaCredito() {
         assertNotNull(createdId);
 
-        String nuevoTitulo = createdTitulo + " (editado)";
-        String nuevoEstado = "EN_CURSO";
+        String nuevoNumero = createdNumero + "-R";
+        String nuevoMotivo = createdMotivo + " (actualizado)";
 
         String body = authSpec()
                 .contentType(ContentType.JSON)
                 .body(Map.of(
-                        "titulo", nuevoTitulo,
-                        "estado", nuevoEstado))
+                        "numero", nuevoNumero,
+                        "motivo", nuevoMotivo))
                 .when()
-                .put("/api/ordenes-trabajo/" + createdId)
+                .put("/api/notas-credito/" + createdId)
                 .then()
                 .statusCode(200)
                 .extract()
@@ -174,61 +174,61 @@ class OrdenTrabajoApiExamIT {
                 .asString();
 
         assertEquals(createdId, JsonPath.from(body).getLong("id"));
-        assertEquals(nuevoTitulo, JsonPath.from(body).getString("titulo"));
-        assertEquals(nuevoEstado, JsonPath.from(body).getString("estado"));
+        assertEquals(nuevoNumero, JsonPath.from(body).getString("numero"));
+        assertEquals(nuevoMotivo, JsonPath.from(body).getString("motivo"));
 
-        createdTitulo = nuevoTitulo;
-        createdEstado = nuevoEstado;
+        createdNumero = nuevoNumero;
+        createdMotivo = nuevoMotivo;
     }
 
     @Test
     @Order(5)
-    @DisplayName("DELETE /api/ordenes-trabajo/{id} → 204")
-    void deleteOrdenTrabajo() {
+    @DisplayName("DELETE /api/notas-credito/{id} → 204")
+    void deleteNotaCredito() {
         assertNotNull(createdId);
 
         authSpec()
                 .when()
-                .delete("/api/ordenes-trabajo/" + createdId)
+                .delete("/api/notas-credito/" + createdId)
                 .then()
                 .statusCode(204);
     }
 
     @Test
     @Order(6)
-    @DisplayName("GET /api/ordenes-trabajo/{id} tras borrar → 404")
-    void getOrdenTrabajoAfterDeleteReturns404() {
+    @DisplayName("GET /api/notas-credito/{id} tras borrar → 404")
+    void getNotaCreditoAfterDeleteReturns404() {
         assertNotNull(createdId);
 
         authSpec()
                 .when()
-                .get("/api/ordenes-trabajo/" + createdId)
+                .get("/api/notas-credito/" + createdId)
                 .then()
                 .statusCode(404);
     }
 
     @Test
     @Order(7)
-    @DisplayName("POST /api/ordenes-trabajo con datos inválidos → 400")
+    @DisplayName("POST /api/notas-credito con datos inválidos → 400")
     void createInvalidReturns400() {
         authSpec()
                 .contentType(ContentType.JSON)
                 .body(Map.of(
-                        "titulo", "",
-                        "estado", "x"))
+                        "numero", "",
+                        "motivo", "x"))
                 .when()
-                .post("/api/ordenes-trabajo")
+                .post("/api/notas-credito")
                 .then()
                 .statusCode(400);
     }
 
     @Test
     @Order(8)
-    @DisplayName("GET /api/ordenes-trabajo/{id} inexistente → 404")
+    @DisplayName("GET /api/notas-credito/{id} inexistente → 404")
     void getNonExistentReturns404() {
         authSpec()
                 .when()
-                .get("/api/ordenes-trabajo/999999999")
+                .get("/api/notas-credito/999999999")
                 .then()
                 .statusCode(404);
     }
@@ -241,7 +241,7 @@ class OrdenTrabajoApiExamIT {
                 .header(HEADER_STUDENT, examStudentId)
                 .header(HEADER_MACHINE, examMachineId)
                 .when()
-                .get("/api/ordenes-trabajo")
+                .get("/api/notas-credito")
                 .then()
                 .statusCode(401);
     }
